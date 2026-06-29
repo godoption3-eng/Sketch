@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VividScribe // Premium Multi-User Creative Guessing Arena</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0b10">
+    <meta name="description" content="An elite, fast-paced canvas drawing and real-time word guessing experience built with hyper-optimized canvas operations.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="app-preloader" class="preloader-overlay">
+        <div class="preloader-brand">
+            <div class="brand-logo-animated">
+                <svg viewBox="0 0 100 100" class="svg-logo">
+                    <defs>
+                        <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="50%" stop-color="#a855f7" />
+                            <stop offset="100%" stop-color="#ec4899" />
+                        </linearGradient>
+                        <filter id="neon-glow">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <path d="M20,50 Q35,20 50,50 T80,50" fill="none" stroke="url(#logo-grad)" stroke-width="8" stroke-linecap="round" filter="url(#neon-glow)"/>
+                    <circle cx="50" cy="50" r="6" fill="#ffffff" />
+                </svg>
+            </div>
+            <h1 class="brand-title">VIVID<span>SCRIBE</span></h1>
+            <p class="brand-tagline">The High-Fidelity Design Arena</p>
+        </div>
+        
+        <div class="loader-progress-container">
+            <div class="loader-bar">
+                <div id="loader-progress-fill" class="loader-bar-fill" style="width: 0%;"></div>
+            </div>
+            <div class="loader-status-row">
+                <span id="loader-status-text" class="status-text">Initializing core audio pipelines...</span>
+                <span id="loader-status-percentage" class="status-percentage">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-app-shell" class="app-shell hidden">
+        
+        <canvas id="ambient-mesh-canvas" class="ambient-bg"></canvas>
+
+        <div id="notification-toast-container" class="toast-layer"></div>
+
+        <main id="view-lobby" class="view-panel dynamic-view-active">
+            <header class="lobby-header">
+                <div class="lobby-brand-block">
+                    <span class="logo-accent-dot"></span>
+                    <h2>VIVID<span>SCRIBE</span></h2>
+                </div>
+                <div class="lobby-meta-actions">
+                    <button id="btn-global-settings" class="icon-btn-glass" aria-label="Open System Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </button>
+                    <button id="btn-toggle-audio-mute" class="icon-btn-glass" aria-label="Toggle Sound Matrix">
+                        <svg id="icon-audio-on" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                        <svg id="icon-audio-off" class="hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="lobby-grid-layout">
+                <section class="glass-card panel-identity">
+                    <div class="card-glow-layer"></div>
+                    <h3 class="panel-title-label">Identity Configuration</h3>
+                    
+                    <div class="avatar-customizer-wrapper">
+                        <div class="avatar-display-viewport">
+                            <svg id="player-avatar-svg" viewBox="0 0 100 100">
+                                </svg>
+                            <button id="btn-randomize-avatar" class="action-reroll-avatar" title="Re-roll Character Matrix">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                            </button>
+                        </div>
+                        <div class="avatar-hue-slider-group">
+                            <label for="slider-avatar-hue" class="input-sub-label">Profile Tone Shift</label>
+                            <input type="range" id="slider-avatar-hue" min="0" max="360" value="240" class="modern-slider-input">
+                        </div>
+                    </div>
+
+                    <div class="input-field-container">
+                        <label for="input-player-nickname" class="input-sub-label">Nickname / Handle</label>
+                        <div class="input-glow-wrapper">
+                            <input type="text" id="input-player-nickname" maxlength="16" placeholder="Enter operative tag..." autocomplete="off">
+                            <span class="input-character-counter" id="nickname-counter">0/16</span>
+                        </div>
+                    </div>
+
+                    <div class="input-field-container">
+                        <label for="select-system-language" class="input-sub-label">Lexicon Interface Pack</label>
+                        <select id="select-system-language" class="modern-select-element">
+                            <option value="en" selected>English (Standard Global)</option>
+                            <option value="es">Español (Castilian)</option>
+                            <option value="fr">Français (European)</option>
+                            <option value="de">Deutsch (Standard High)</option>
+                            <option value="jp">日本語 (Standard Keyboard)</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section class="glass-card panel-matchmaking">
+                    <div class="card-glow-layer"></div>
+                    <h3 class="panel-title-label">Deployment Channels</h3>
+
+                    <div class="action-button-stack">
+                        <button id="btn-lobby-join-public" class="btn-action-primary premium-pulse">
+                            <span class="btn-flex-content">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                Find Match (Public Servers)
+                            </span>
+                        </button>
+
+                        <div class="or-separator-line">
+                            <span>OR DEPLOY SEPARATE SECURE HUB</span>
+                        </div>
+
+                        <button id="btn-lobby-create-private" class="btn-action-secondary">
+                            <span class="btn-flex-content">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Establish Private Arena
+                            </span>
+                        </button>
+                    </div>
+
+                    <div class="secure-token-join-block">
+                        <label for="input-room-token" class="input-sub-label">Direct Secure Encryption Token Code</label>
+                        <div class="token-input-row">
+                            <input type="text" id="input-room-token" placeholder="XXXX-XXXX-XXXX" maxlength="14" autocomplete="off" class="mono-font-input">
+                            <button id="btn-lobby-join-token" class="btn-action-accent">Connect</button>
+                        </div>
+                    </div>
+
+                    <div class="or-separator-line">
+                        <span>OFFLINE STRATEGIC SIMULATION</span>
+                    </div>
+
+                    <button id="btn-lobby-offline-practice" class="btn-action-dark">
+                        <span class="btn-flex-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                            Initialize Offline Practice Modality
+                        </span>
+                    </button>
+                </section>
+            </div>
+        </main>
+        <section id="view-match-arena" class="view-panel hidden">
+            <header class="arena-dashboard glass-card">
+                <div class="dashboard-left-meta">
+                    <div class="round-counter-badge">
+                        <span class="meta-label">ROUND</span>
+                        <span id="txt-current-round" class="meta-value-mono">0/0</span>
+                    </div>
+                    <div id="arena-timer-container" class="timer-radial-wrap">
+                        <svg viewBox="0 0 36 36" class="timer-circular-svg">
+                            <path class="timer-circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path id="timer-circle-progress" class="timer-circle-fill" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <span id="txt-arena-timer" class="timer-countdown-text">00</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-center-prompt">
+                    <div id="wrapper-prompt-hidden" class="word-hidden-slots-container">
+                        </div>
+                    <div id="wrapper-prompt-active" class="word-active-authoring hidden">
+                        <span class="authoring-prefix">YOUR TURN TO DRAW:</span>
+                        <span id="txt-active-word" class="authoring-word-target">INITIALIZING</span>
+                    </div>
+                    <div id="txt-word-hint-category" class="prompt-category-hint">Category: General</div>
+                </div>
+
+                <div class="dashboard-right-actions">
+                    <div class="room-identity-badge">
+                        <span class="meta-label">ROOM CODE</span>
+                        <span id="txt-arena-room-code" class="meta-value-mono">----</span>
+                        <button id="btn-copy-room-link" class="btn-action-mini" title="Copy Secure Link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        </button>
+                    </div>
+                    <button id="btn-arena-settings" class="icon-btn-glass-sm" aria-label="Room Controls">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="arena-battlegrounds-grid">
+                
+                <aside class="arena-roster-column glass-card">
+                    <div class="roster-header-row">
+                        <h4>OPERATIVES</h4>
+                        <span id="txt-roster-count" class="badge-count-pill">0</span>
+                    </div>
+                    <div id="container-player-roster" class="roster-scroll-container">
+                        </div>
+                    <div class="roster-footer-controls">
+                        <button id="btn-arena-spectate-toggle" class="btn-utility-flat">Spectate Mode</button>
+                        <button id="btn-arena-leave" class="btn-utility-flat panic-red">Abandon Arena</button>
+                    </div>
+                </aside>
+
+                <main class="arena-canvas-column">
+                    <div id="canvas-workspace-wrapper" class="canvas-viewport-frame glass-card">
+                        <canvas id="main-drawing-canvas"></canvas>
+                        
+                        <div id="canvas-overlay-screen" class="canvas-modal-overlay hidden">
+                            <div id="modal-word-picker" class="picker-dialog hidden">
+                                <h3>SELECT YOUR INTEL TARGET</h3>
+                                <p class="picker-subtext">The quicker you draw, the higher your combo modifier potential.</p>
+                                <div id="container-word-options" class="word-selection-row">
+                                    </div>
+                            </div>
+                            <div id="modal-round-summary" class="summary-dialog hidden">
+                                <h2 id="txt-summary-title">ROUND CONCLUDED</h2>
+                                <p class="summary-subtext">The hidden word target was: <strong id="txt-summary-revealed-word">---</strong></p>
+                                <div id="container-summary-podium" class="summary-podium-flow">
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="canvas-tool-dock" class="canvas-dock-controls glass-card disabled-context-overlay">
+                        <div class="dock-section-palette">
+                            <div class="palette-grid-scroll">
+                                <div class="swatch-item active-swatch" data-hex="#000000" style="background-color: #000000;"></div>
+                                <div class="swatch-item" data-hex="#ffffff" style="background-color: #ffffff;"></div>
+                                <div class="swatch-item" data-hex="#ef4444" style="background-color: #ef4444;"></div>
+                                <div class="swatch-item" data-hex="#f97316" style="background-color: #f97316;"></div>
+                                <div class="swatch-item" data-hex="#f59e0b" style="background-color: #f59e0b;"></div>
+                                <div class="swatch-item" data-hex="#10b981" style="background-color: #10b981;"></div>
+                                <div class="swatch-item" data-hex="#06b6d4" style="background-color: #06b6d4;"></div>
+                                <div class="swatch-item" data-hex="#3b82f6" style="background-color: #3b82f6;"></div>
+                                <div class="swatch-item" data-hex="#6366f1" style="background-color: #6366f1;"></div>
+                                <div class="swatch-item" data-hex="#a855f7" style="background-color: #a855f7;"></div>
+                                <div class="swatch-item" data-hex="#ec4899" style="background-color: #ec4899;"></div>
+                                <div class="swatch-item" data-hex="#78350f" style="background-color: #78350f;"></div>
+                            </div>
+                            <div class="custom-picker-stub">
+                                <input type="color" id="input-canvas-color-custom" value="#6366f1" class="native-color-trigger" title="Spectrum Matrix Picker">
+                                <div class="picker-visual-proxy"></div>
+                            </div>
+                        </div>
+
+                        <div class="dock-divider-line"></div>
+
+                        <div class="dock-section-engines">
+                            <button class="engine-btn active-engine" data-engine="pencil" title="Precision Pencil">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </button>
+                            <button class="engine-btn" data-engine="marker" title="High Fluid Marker">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.3 15.3l-6.6-6.6c-.7-.7-1.8-.7-2.5 0L3.5 17.4c-.4.4-.6 1-.6 1.6V21h2c.6 0 1.2-.2 1.6-.6l8.7-8.7c.7-.7.7-1.8 0-2.5l-2.5-2.5"></path></svg>
+                            </button>
+                            <button class="engine-btn" data-engine="spray" title="Aerosol Spray">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                            </button>
+                            <button class="engine-btn" data-engine="fill" title="Flood Fill Engine">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-2.96-2.55-6.52-5.75-9.25a1 1 0 0 0-1.5 0C8.55 8.48 6 12.04 6 15a7 7 0 0 0 7 7z"></path></svg>
+                            </button>
+                            <button class="engine-btn" data-engine="eraser" title="Vector Eraser">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H4"></path><path d="M20.7 7.3c.4.4.4 1 0 1.4l-10 10c-.2.2-.4.3-.7.3H7v-3.3c0-.3.1-.5.3-.7l10-10c.4-.4 1-.4 1.4 0z"></path></svg>
+                            </button>
+                        </div>
+
+                        <div class="dock-divider-line"></div>
+
+                        <div class="dock-section-sliders">
+                            <div class="slider-row">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg>
+                                <input type="range" id="slider-brush-size" min="2" max="64" value="8" class="modern-slider-input tier-sm">
+                                <span id="txt-brush-size-val" class="mono-value-label">8px</span>
+                            </div>
+                            <div class="slider-row">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                <input type="range" id="slider-brush-opacity" min="10" max="100" value="100" class="modern-slider-input tier-sm">
+                                <span id="txt-brush-opacity-val" class="mono-value-label">100%</span>
+                            </div>
+                        </div>
+
+                        <div class="dock-divider-line"></div>
+
+                        <div class="dock-section-history">
+                            <button id="btn-canvas-undo" class="history-btn" title="Undo Last Transform (Ctrl+Z)" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+                            </button>
+                            <button id="btn-canvas-redo" class="history-btn" title="Redo Transform (Ctrl+Y)" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+                            </button>
+                            <button id="btn-canvas-clear" class="history-btn panic-red-hover" title="Wipe Drawing Surface Matrix">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                </main>
+
+                <aside class="arena-comms-column glass-card">
+                    <div class="comms-header-row">
+                        <h4>DECRYPTION CHIP LOG</h4>
+                        <div id="indicator-typing-hub" class="typing-matrix-indicator invisible">
+                            <span class="dot-bounce"></span><span class="dot-bounce"></span><span class="dot-bounce"></span>
+                        </div>
+                    </div>
+
+                    <div id="container-chat-stream" class="chat-stream-viewport">
+                        </div>
+
+                    <div class="comms-input-footer">
+                        <div id="drawer-quick-emojis" class="emoji-tray-row hidden">
+                            <button class="emoji-macro-item">🎯</button>
+                            <button class="emoji-macro-item">💡</button>
+                            <button class="emoji-macro-item">🔥</button>
+                            <button class="emoji-macro-item">👏</button>
+                            <button class="emoji-macro-item">😂</button>
+                            <button class="emoji-macro-item">🤔</button>
+                        </div>
+                        <form id="form-arena-chat" autocomplete="off" onsubmit="return false;">
+                            <div class="chat-input-wrapper">
+                                <button type="button" id="btn-trigger-emoji-tray" class="btn-chat-addon" title="Inject Expression Macro">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                                </button>
+                                <input type="text" id="input-chat-message" placeholder="Decrypt answer here..." maxlength="120">
+                                <button type="submit" id="btn-chat-send" class="btn-chat-send" aria-label="Broadcast Message">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </aside>
+            </div>
+        </section>
+        <div id="modal-system-settings" class="canvas-modal-overlay hidden">
+            <div class="glass-card settings-dialog-panel">
+                <div class="card-glow-layer"></div>
+                <header class="settings-modal-header">
+                    <h3>SYSTEM CONFIGURATION</h3>
+                    <button id="btn-close-settings" class="icon-btn-glass-sm" aria-label="Dismiss Settings Modal">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </header>
+                
+                <div class="settings-scroll-body">
+                    <fieldset class="settings-group-frame">
+                        <legend>Sonic Matrix Filters</legend>
+                        <div class="setting-row-item">
+                            <label for="slider-volume-master">Master Amplitude</label>
+                            <div class="slider-metric-bridge">
+                                <input type="range" id="slider-volume-master" min="0" max="100" value="75" class="modern-slider-input tier-sm">
+                                <span id="txt-vol-master-lbl" class="mono-value-label">75%</span>
+                            </div>
+                        </div>
+                        <div class="setting-row-item">
+                            <label for="toggle-sfx-state">Synthesized Audio FX</label>
+                            <label class="switch-ui-proxy">
+                                <input type="checkbox" id="toggle-sfx-state" checked>
+                                <span class="switch-ui-slider"></span>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset id="host-controls-wrapper" class="settings-group-frame client-is-spectator-disabled">
+                        <legend>Room Engine Parameters (Host Only)</legend>
+                        <div class="setting-row-item">
+                            <label for="select-room-round-count">Match Iterations (Rounds)</label>
+                            <select id="select-room-round-count" class="modern-select-element tier-compact">
+                                <option value="2">2 Rounds</option>
+                                <option value="3" selected>3 Rounds</option>
+                                <option value="5">5 Rounds</option>
+                                <option value="8">8 Rounds</option>
+                            </select>
+                        </div>
+                        <div class="setting-row-item">
+                            <label for="select-room-draw-time">Authoring Phase Clock (Seconds)</label>
+                            <select id="select-room-draw-time" class="modern-select-element tier-compact">
+                                <option value="30">30 Seconds</option>
+                                <option value="60" selected>60 Seconds</option>
+                                <option value="90">90 Seconds</option>
+                                <option value="120">120 Seconds</option>
+                            </select>
+                        </div>
+                        <div class="setting-row-item">
+                            <label for="select-word-difficulty">Vocabulary Spectrum</label>
+                            <select id="select-word-difficulty" class="modern-select-element tier-compact">
+                                <option value="easy">Easy (Standard Words)</option>
+                                <option value="medium" selected>Medium (Standard & Complex)</option>
+                                <option value="hard">Hard (Extreme Technical Terms)</option>
+                                <option value="mixed">Mixed Matrix Pool</option>
+                            </select>
+                        </div>
+                        <div class="setting-row-item field-vertical-stack">
+                            <label for="textarea-custom-words">Injected Custom Target Vectors (Comma Separated)</label>
+                            <textarea id="textarea-custom-words" placeholder="cyberpunk, mainframe, telemetry, singularity..."></textarea>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <footer class="settings-modal-footer">
+                    <button id="btn-settings-save-apply" class="btn-action-primary">Apply Architecture Modifications</button>
+                </footer>
+            </div>
+        </div>
+
+    </div> 
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script src="utils.js"></script>
+    <script src="storage.js"></script>
+    <script src="settings.js"></script>
+    <script src="animation.js"></script>
+    <script src="mobile.js"></script>
+    <script src="player.js"></script>
+    <script src="rooms.js"></script>
+    <script src="network.js"></script>
+    <script src="canvas.js"></script>
+    <script src="drawing.js"></script>
+    <script src="chat.js"></script>
+    <script src="timer.js"></script>
+    <script src="word.js"></script>
+    <script src="game.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
