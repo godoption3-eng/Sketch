@@ -422,19 +422,29 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script src="utils.js"></script>
-    <script src="storage.js"></script>
-    <script src="settings.js"></script>
-    <script src="animation.js"></script>
-    <script src="mobile.js"></script>
-    <script src="player.js"></script>
-    <script src="rooms.js"></script>
-    <script src="network.js"></script>
-    <script src="canvas.js"></script>
-    <script src="drawing.js"></script>
-    <script src="chat.js"></script>
-    <script src="timer.js"></script>
-    <script src="word.js"></script>
-    <script src="game.js"></script>
+<script src="storage.js"></script>
+
+<script src="settings.js"></script>
+<script src="animation.js"></script>
+<script src="canvas.js"></script>
+
+<script src="drawing.js"></script>
+<script src="timer.js"></script>
+<script src="word.js"></script>
+<script src="chat.js"></script>
+
+<script>
+    // সমস্ত DOM এলিমেন্ট এবং স্ক্রিপ্ট লোড হওয়ার পর ইনিশিয়ালাইজ করা
+    document.addEventListener("DOMContentLoaded", () => {
+        if(window.StorageEngine) { /* initializations */ }
+        if(window.SystemSettings) window.SystemSettings.initialize();
+        if(window.CanvasEngine) window.CanvasEngine.initialize();
+        if(window.DrawingController) window.DrawingController.initialize();
+        if(window.ChatEngine) window.ChatEngine.initialize();
+        if(window.CountdownTimer) window.CountdownTimer.initialize();
+    });
+</script>
+
 </body>
 </html>
 
