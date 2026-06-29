@@ -1,4 +1,4 @@
-// --- ফায়ারবেস আসল কনফিগারেশন সেটআপ ---
+// --- ফায়ারবেস কনফিগারেশন ---
 const firebaseConfig = {
     apiKey: "AIzaSyC4BAf6Ave53GAt5nsQZUgFqDkM7WnfTz8",
     authDomain: "sketch-4668f.firebaseapp.com",
@@ -9,8 +9,8 @@ const firebaseConfig = {
     appId: "1:374735859440:web:77fc8b9f7753641db29c35"
 };
 
-// ফায়ারবেস ইনিশিয়ালাইজ করা
-if (typeof firebase !== 'undefined') {
+// গেমটি লোড হওয়ার সময় ফায়ারবেস চেক ও ইনিশিয়ালাইজ করা
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
@@ -25,21 +25,27 @@ const NetworkInterface = {
     localPlayerId: null,
 
     initialize() {
-        console.log("Firebase Network Interface Armed.");
-        if (window.PlayerEngine) {
+        console.log("Network Interface: Setting up system identity...");
+        // প্লেয়ার প্রোফাইল পাওয়ার চেষ্টা করা
+        if (window.PlayerEngine && window.PlayerEngine.localProfile) {
             this.localPlayerId = window.PlayerEngine.localProfile.id || "p_" + Math.random().toString(36).substr(2, 9);
+        } else {
+            this.localPlayerId = "p_" + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // ফায়ারবেস ডেটাবেস রেফারেন্স সেট করা
+        if (typeof firebase !== 'undefined') {
+            this.db = firebase.database();
         }
     },
 
     connectToRoom(roomCode) {
-        if (typeof firebase === 'undefined') {
-            console.error("Firebase library not loaded!");
+        if (!this.db) {
+            console.error("Firebase Database not initialized!");
             return;
         }
 
         this.currentRoomCode = roomCode;
-        this.db = firebase.database();
-        
         this.roomRef = this.db.ref(`rooms/${roomCode}/players`);
         this.canvasRef = this.db.ref(`rooms/${roomCode}/canvas`);
         this.chatRef = this.db.ref(`rooms/${roomCode}/messages`);
@@ -49,76 +55,45 @@ const NetworkInterface = {
         this.syncLocalPlayerToRoster();
         this.listenToFirebaseEvents();
 
-        if (window.AnimationSystem) {
-            window.AnimationSystem.triggerToast(`Connected to Firebase Room: ${roomCode}`, "success");
-        }
+        console.log("Connected to room:", roomCode);
     },
 
     syncLocalPlayerToRoster() {
         if (!this.roomRef) return;
-        const profile = window.PlayerEngine ? window.PlayerEngine.localProfile : {};
+        const profile = (window.PlayerEngine && window.PlayerEngine.localProfile) ? window.PlayerEngine.localProfile : { nickname: "Player" };
         
         this.roomRef.child(this.localPlayerId).set({
             id: this.localPlayerId,
-            nickname: profile.nickname || "Unknown Player",
-            avatarHue: profile.avatarHue || 0,
+            nickname: profile.nickname,
             score: profile.score || 0,
-            isHost: profile.isHost || false,
-            isDrawing: profile.isDrawing || false,
-            hasGuessed: profile.hasGuessed || false
+            isDrawing: profile.isDrawing || false
         });
 
         this.roomRef.child(this.localPlayerId).onDisconnect().remove();
     },
 
     listenToFirebaseEvents() {
+        if (!this.roomRef) return;
+
+        // প্লেয়ার আপডেট শোনা
         this.roomRef.on('value', (snapshot) => {
             const data = snapshot.val();
             if (data && window.PlayerEngine) {
-                const playersArray = Object.values(data);
-                window.PlayerEngine.renderRoster(playersArray);
+                window.PlayerEngine.renderRoster(Object.values(data));
             }
         });
 
+        // ক্যানভাস আপডেট শোনা
         this.canvasRef.on('value', (snapshot) => {
             const dataUrl = snapshot.val();
-            if (dataUrl && window.PlayerEngine) {
-                if (!window.PlayerEngine.localProfile.isDrawing) {
-                    const img = new Image();
-                    img.src = dataUrl;
-                    img.onload = () => {
-                        const ctx = window.CanvasEngine.ctx;
-                        const canvas = window.CanvasEngine.canvas;
-                        if (ctx && canvas) {
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            ctx.drawImage(img, 0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
-                        }
-                    };
-                }
-            }
-        });
-
-        this.chatRef.limitToLast(1).on('child_added', (snapshot) => {
-            const packet = snapshot.val();
-            if (packet && window.ChatEngine) {
-                if (packet.senderId !== this.localPlayerId) {
-                    window.ChatEngine.pushMessageToStream(packet.author, packet.text, packet.context);
-                }
-            }
-        });
-
-        this.typingRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (window.ChatEngine) {
-                let someoneElseIsTyping = false;
-                if (data) {
-                    Object.keys(data).forEach(id => {
-                        if (id !== this.localPlayerId && data[id] === true) {
-                            someoneElseIsTyping = true;
-                        }
-                    });
-                }
-                window.ChatEngine.toggleTypingIndicator(someoneElseIsTyping);
+            if (dataUrl && window.CanvasEngine && (!window.PlayerEngine || !window.PlayerEngine.localProfile.isDrawing)) {
+                const img = new Image();
+                img.onload = () => {
+                    const ctx = window.CanvasEngine.ctx;
+                    ctx.clearRect(0, 0, window.CanvasEngine.canvas.width, window.CanvasEngine.canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = dataUrl;
             }
         });
     },
@@ -127,48 +102,6 @@ const NetworkInterface = {
         if (this.canvasRef && this.connectionStatus) {
             this.canvasRef.set(dataUrl);
         }
-    },
-
-    sendChatMessage(text) {
-        if (this.chatRef && this.connectionStatus) {
-            const profile = window.PlayerEngine ? window.PlayerEngine.localProfile : {};
-            this.chatRef.push({
-                senderId: this.localPlayerId,
-                author: profile.nickname,
-                text: text,
-                context: "user"
-            });
-        }
-    },
-
-    sendTypingState(isTyping) {
-        if (this.typingRef && this.connectionStatus) {
-            if (isTyping) {
-                this.typingRef.child(this.localPlayerId).set(true);
-            } else {
-                this.typingRef.child(this.localPlayerId).remove();
-            }
-        }
-    },
-
-    sendAdminAction(action, playerId) {
-        if (action === 'kick' && this.roomRef && this.connectionStatus) {
-            this.roomRef.child(playerId).remove();
-        }
-    },
-
-    disconnectFromRoom() {
-        if (this.roomRef) {
-            this.roomRef.child(this.localPlayerId).remove();
-            this.roomRef.off();
-        }
-        if (this.canvasRef) this.canvasRef.off();
-        if (this.chatRef) this.chatRef.off();
-        if (this.typingRef) this.typingRef.off();
-
-        this.connectionStatus = false;
-        this.currentRoomCode = null;
-        console.log("Disconnected from Firebase.");
     },
 
     isConnected() {
